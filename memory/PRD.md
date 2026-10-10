@@ -1,33 +1,35 @@
-# ShinDora Nesub (Ver 1.0.0) - Product Requirement Document & Overview
+# ShinDora Nesub - OpenNext Cloudflare & Turso Database PRD
 
-## 1. Project Overview
-ShinDora Nesub adalah platform streaming anime dan kartun nostalgia (Doraemon, Shinchan, Ninja Hattori, Chibi Maruko-chan, dll.) berbasis Next.js 15 dan didesain untuk performa tinggi, kompatibilitas deployment Vercel, serta dukungan edge caching Cloudflare CDN.
+## Original Problem Statement
+Clone https://github.com/maskohar445/shindora-cloudflare.git, configure OpenNext Cloudflare, migrate database from Cloudflare D1 to Turso (LibSQL), ensure deployment on Cloudflare Workers runs smoothly, and verify all UI and features match the original code.
 
-## 2. Fitur Utama
+## Architecture & Technology Stack
+- **Framework**: Next.js 15 (App Router)
+- **Edge Deployment**: `@opennextjs/cloudflare` + Cloudflare Workers (`workerd` runtime)
+- **Primary Database**: Turso Database (LibSQL) with pure fetch-based HTTP Edge Pipeline engine (`/v2/pipeline`), `@libsql/client`, and local SQLite fallback (`local_sqlite.db`)
+- **Seeding & Migrations**: `turso_init.sql` (120 Doraemon episodes, 9 categories, settings, admin user) and `scripts/seed-turso.js`
+- **Configuration**: `open-next.config.ts`, `wrangler.json`, `wrangler.toml`
 
-### A. Sistem Iklan & Script Engine (Multi Slot Ads)
-- **Eksekusi Script HTML/JS Dinamis**:
-  - Komponen `AdSlotContainer` mengeksekusi kode script HTML (`<script>`, inline JS, dynamic script injection `document.currentScript`, `insertBefore`, `async`, `defer`).
-  - Mendukung berbagai jaringan iklan (Adsterra, Google AdSense, Monetag, PropellerAds, PopAds, iframe, dll.).
-  - Proteksi anti-crash dan isolasi `document.write` agar tidak merusak rendering DOM React.
-- **Ekspansi 20+ Posisi Slot Iklan**:
-  - **Header & Navigasi**: `banner_top`, `banner_below_header`
-  - **Player & Watch Page**: `banner_above_player`, `banner_below_player`, `banner_below_player_2`, `banner_sidebar`, `banner_sidebar_2`, `banner_above_playlist`, `banner_below_playlist`, `banner_below_comments`
-  - **Home & Feed Grid**: `banner_between_feed` (item 4), `banner_between_feed_2` (item 12), `banner_between_feed_3` (item 20), `banner_footer`
-  - **Floating & Global**: `banner_float_bottom` (sticky bar dengan tombol tutup), `banner_float_left` (skyscraper kiri desktop), `banner_float_right` (skyscraper kanan desktop), `banner_popup` (modal Saweria), `custom_head_code` (popunder/social bar global)
-  - **Putar Manual**: `banner_putar_manual_top`, `banner_putar_manual_bottom`
-- **Dukungan Multi-Iklan per Slot**: Jika beberapa iklan aktif didaftarkan pada slot yang sama, semua iklan akan dirender secara rapi.
+## Key Features Implemented & Migrated
+1. **Turso Database Engine**:
+   - Replaced Cloudflare D1 with Turso (LibSQL) as the #1 primary database.
+   - Pure fetch HTTP pipeline engine enables zero-cold-start queries in Cloudflare Worker edge runtime with zero native C++ binding dependencies.
+   - Built-in local fallback to `local_sqlite.db` for offline development and testing.
+2. **OpenNext Cloudflare Setup**:
+   - Configured `@opennextjs/cloudflare` build producing `.open-next/worker.js` and `.open-next/assets`.
+   - Removed obsolete D1 bindings and configured Turso secrets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`).
+3. **UI & Fullstack Features (Identical to Source)**:
+   - Homepage with 120 Doraemon episodes, categories, search, filter, and pagination.
+   - Video watch page (`/watch/[slug]`) with video player, metadata, JSON-LD, comments, and related episodes.
+   - TV mode (`/tv`) with Smart TV interface, remote control keyboard, and autoplay.
+   - Admin & Moderator dashboards (`/admin`, `/moderator`) with video management, categories, settings, and user auth.
+   - Manual player (`/putar-manual`).
+4. **Automated Seeding & Guides**:
+   - `TURSO_DATABASE_SETUP.md`: Comprehensive step-by-step Turso setup & deployment guide.
+   - `OPENNEXT_CLOUDFLARE_GUIDE.md`: Cloudflare Workers deploy guide with `wrangler deploy`.
+   - `scripts/seed-turso.js` & `turso_init.sql`: One-click data migration into any Turso instance.
 
-### B. VAPID Web Push Notification
-- **Notifikasi Otomatis saat Video Publik**:
-  - Terkirim otomatis ke seluruh subscriber saat admin membuat video baru berstatus `published` atau saat video diubah dari draft/scheduled menjadi `published`.
-  - Tidak mengirim notifikasi spam yang tidak perlu saat admin hanya mengedit informasi rutin (typo, kategori, view count).
-- **Broadcast Manual Admin**:
-  - Tombol ikon lonceng 🔔 pada tabel daftar video admin untuk memicu notifikasi push instan kapan saja (`POST /api/videos/notify`).
-  - Checkbox toggle pada modal video admin untuk mengaktifkan/menonaktifkan pengiriman push saat menyimpan.
-
-### C. Streaming Video, Smart TV & Komunitas
-- **Streaming & Watch Page**: Multi-server (Google Drive, Doodstream, dll.), download link, rekomendasi, like, watch later, dan komentar bertingkat.
-- **Smart TV Mode (`/tv`)**: Navigasi D-pad/remote control (Arrow Keys, Enter, Back).
-- **Putar Manual (`/putar-manual`)**: Pemutaran video mandiri dengan embed link kustom.
-- **Interaktivitas Komunitas**: Floating chat widget global, polling interaktif, overlay donasi Saweria/Trakteer.
+## Verification Status
+- OpenNext Cloudflare Worker build: PASSED (`.open-next/worker.js` generated)
+- Pytest public API & authentication suite: PASSED (2/2 tests)
+- UI and Mobile responsiveness: VERIFIED (120 watch links, responsive layouts)

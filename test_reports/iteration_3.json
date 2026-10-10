@@ -1,0 +1,31 @@
+{
+  "summary": "OpenNext worker build and the existing pytest run passed once, but live public API requests are unstable due missing Next.js chunks; homepage/watch UI partially works while TV is empty and unstyled.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/videos, /api/categories, /api/settings, /api/auth/login", "issue": "Live public requests returned HTTP 500 with Cannot find module './873.js' in the Next.js server bundle. Supervisor logs also show this affects the API route and page rendering.", "priority": "CRITICAL"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TV route", "issue": "Route loads but contains only TV header/navigation and zero episode/watch links; expected video content is absent.", "selector": "a[href*='/watch/']", "priority": "HIGH"},
+      {"component": "Homepage/TV", "issue": "Rendered UI is visibly browser-default/unstyled in screenshots, indicating CSS/static asset delivery or dev bundle instability.", "selector": "body", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "API data to TV", "issue": "Homepage exposed 120 watch links, but TV exposed 0 links despite the seeded video data; API failures during the same run make this intermittent but reproducible in the deployed preview.", "affected_selectors": ["a[href*='/watch/']", "body"]}
+    ],
+    "design_issues": [
+      {"screen": "Homepage and TV", "issues": ["Controls, typography, and layout render as default browser styles in captured live screenshots."]}
+    ]
+  },
+  "test_report_links": ["/app/tests/test_shindora_public.py", "/app/test_reports/pytest/shindora_results.xml", "/app/test_reports/pytest/shindora_results_live.xml"],
+  "action_items": ["Fix supervisor/Next.js hot-reload chunk invalidation (missing ./873.js and vendor chunks) or run the preview from a clean production build.", "Investigate TV data-loading/rendering separately; it currently shows no episodes.", "Verify CSS/static assets are served in the deployed worker, not only in a transient dev bundle.", "Configure and verify actual Turso environment variables; current frontend env did not expose TURSO settings and wrangler.json still contains a placeholder D1 binding."],
+  "critical_code_review_comments": ["wrangler.json retains a placeholder D1 database ID while the requested primary database is Turso; this is risky for deployment and fallback behavior.", "lib/db.js falls back to local SQLite/in-memory storage when Turso is unavailable, so a successful local build does not prove Turso connectivity or persistence.", "The test fixture embeds the requested admin credential, but /app/memory/test_credentials.md contains different credentials; reconcile the approved credential source before auth regression testing."],
+  "updated_files": ["/app/test_reports/iteration_3.json"],
+  "success_rate": {"build": "100%", "backend_pytest": "100% initial / 0% live final", "frontend": "Homepage/watch 100%, TV 0%"},
+  "seed_data_creation": "None; verified existing data only.",
+  "retest_needed": true,
+  "should_call_test_agent_after_fix": true,
+  "context_for_next_testing_agent": "yarn build:worker produced frontend/.open-next/worker.js cleanly (only metadataBase/duplicate duration warnings). Initial pytest passed 2/2 and homepage showed 120 links; subsequent live API calls failed with missing .next chunk ./873.js. Watch route loaded with Doraemon metadata; TV route loaded but had zero episodes. No APIs were mocked.",
+  "rca of the issue": "Supervisor frontend logs show the generated .next server webpack runtime references deleted/missing chunks (./873.js and vendor chunks). This explains intermittent 500s for API/page routes and the unstyled/incomplete UI. The worker build itself is independent and succeeds, but deployment readiness is not proven because Turso was not demonstrably configured or exercised."
+}

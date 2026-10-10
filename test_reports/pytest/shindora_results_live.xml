@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.581" timestamp="2026-10-10T13:08:26.193537+00:00" hostname="agent-env-eeaf4bd7-4972-40d7-8f84-5250f77e97f6"><testcase classname="tests.test_shindora_public" name="test_public_api_payloads" time="0.259"><failure message="AssertionError: ('/api/videos', '&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;style data-next-hide-fouc=&quot;true&quot;&gt;body{display:none}&lt;/style&gt;&lt;noscript data...&gt;&lt;/script&gt;&lt;script src=&quot;/_next/static/chunks/webpack.js&quot; defer=&quot;&quot;&gt;&lt;/script&gt;&lt;script src=&quot;/_next/static/chunks/main.js&quot; ')&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">def test_public_api_payloads():
+        assert BASE_URL
+        session = requests.Session()
+        for endpoint in ("/api/videos", "/api/categories", "/api/settings"):
+            response = session.get(BASE_URL + endpoint, timeout=20)
+&gt;           assert response.status_code == 200, (endpoint, response.text[:500])
+E           AssertionError: ('/api/videos', '&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;style data-next-hide-fouc="true"&gt;body{display:none}&lt;/style&gt;&lt;noscript data...&gt;&lt;/script&gt;&lt;script src="/_next/static/chunks/webpack.js" defer=""&gt;&lt;/script&gt;&lt;script src="/_next/static/chunks/main.js" ')
+E           assert 500 == 200
+E            +  where 500 = &lt;Response [500]&gt;.status_code
+
+../tests/test_shindora_public.py:12: AssertionError</failure></testcase><testcase classname="tests.test_shindora_public" name="test_admin_login" time="0.252"><failure message="AssertionError: &lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;style data-next-hide-fouc=&quot;true&quot;&gt;body{display:none}&lt;/style&gt;&lt;noscript data-next-hide-fouc=&quot;true&quot;&gt;&lt;style&gt;body{display:block}&lt;/style&gt;&lt;/noscript&gt;&lt;meta charSet=&quot;utf-8&quot; data-next-head=&quot;&quot;/&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width&quot; data-next-head=&quot;&quot;/&gt;&lt;noscript data-n-css=&quot;&quot;&gt;&lt;/noscript&gt;&lt;script defer=&quot;&quot; nomodule=&quot;&quot; src=&quot;/_next/static/chunks/polyfills.js&quot;&gt;&lt;/script&gt;&lt;script src=&quot;/_next/static/chunks/webpack.js&quot; defer=&quot;&quot;&gt;&lt;/script&gt;&lt;script src=&quot;/_next/static/chunks/main.js&quot; &#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">def test_admin_login():
+        assert BASE_URL
+        response = requests.post(
+            BASE_URL + "/api/auth/login",
+            json={"email": "maskohar76@gmail.com", "password": "Emilia9@#$"},
+            timeout=20,
+        )
+&gt;       assert response.status_code == 200, response.text[:500]
+E       AssertionError: &lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;style data-next-hide-fouc="true"&gt;body{display:none}&lt;/style&gt;&lt;noscript data-next-hide-fouc="true"&gt;&lt;style&gt;body{display:block}&lt;/style&gt;&lt;/noscript&gt;&lt;meta charSet="utf-8" data-next-head=""/&gt;&lt;meta name="viewport" content="width=device-width" data-next-head=""/&gt;&lt;noscript data-n-css=""&gt;&lt;/noscript&gt;&lt;script defer="" nomodule="" src="/_next/static/chunks/polyfills.js"&gt;&lt;/script&gt;&lt;script src="/_next/static/chunks/webpack.js" defer=""&gt;&lt;/script&gt;&lt;script src="/_next/static/chunks/main.js" 
+E       assert 500 == 200
+E        +  where 500 = &lt;Response [500]&gt;.status_code
+
+../tests/test_shindora_public.py:33: AssertionError</failure></testcase></testsuite></testsuites>

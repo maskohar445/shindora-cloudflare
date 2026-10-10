@@ -8,11 +8,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "shindora-db",
-      "database_id": "shindora-d1-database-id"
-    }
-  ]
+  "vars": {
+    "TURSO_DATABASE_URL": "",
+    "TURSO_AUTH_TOKEN": "",
+    "STANDALONE": "true"
+  }
 }
