@@ -378,7 +378,11 @@ async function handleRoute(request, context) {
       }
 
       const { password: _, ...userWithoutPassword } = user
-      return handleCORS(NextResponse.json(userWithoutPassword))
+      return handleCORS(NextResponse.json({
+        ...userWithoutPassword,
+        token: userWithoutPassword.id || userWithoutPassword._id || 'shindora-session-token',
+        user: userWithoutPassword
+      }))
     }
 
     if (route === '/auth/forgot-password' && method === 'POST') {

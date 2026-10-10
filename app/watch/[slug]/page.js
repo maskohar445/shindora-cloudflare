@@ -3,12 +3,12 @@ import ShindoraApp from '@/app/ShindoraApp'
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
-  const slug = resolvedParams.slug;
+  const slug = resolvedParams?.slug;
   
   let video = null
   try {
     const db = await getUnifiedDb()
-    video = await db.collection('videos').findOne({ slug })
+    video = await db.collection('videos').findOne({ $or: [{ slug }, { id: slug }] })
   } catch (err) {
     console.error('[Metadata Fetch Error]:', err)
   }
@@ -51,14 +51,34 @@ export async function generateMetadata({ params }) {
 
 export default async function WatchSlugPage({ params }) {
   const resolvedParams = await params;
-  const slug = resolvedParams.slug;
+  const slug = resolvedParams?.slug;
 
   let video = null
+  let initialVideos = []
+  let initialCategories = []
+  let initialSettings = null
+
   try {
     const db = await getUnifiedDb()
-    video = await db.collection('videos').findOne({ $or: [{ slug }, { id: slug }] })
+    const [v, vids, cats, sets] = await Promise.all([
+      db.collection('videos').findOne({ $or: [{ slug }, { id: slug }] }).catch(() => null),
+      db.collection('videos').find({
+        $and: [{
+          $or: [
+            { status: { $exists: false } },
+            { status: 'published' }
+          ]
+        }]
+      }).toArray().catch(() => []),
+      db.collection('categories').find({}).toArray().catch(() => []),
+      db.collection('settings').findOne({ id: 'site_settings' }).catch(() => null)
+    ])
+    video = v
+    initialVideos = vids || []
+    initialCategories = cats || []
+    initialSettings = sets || null
   } catch (err) {
-    console.error('[Watch JSON-LD Turso Fetch Error]:', err)
+    console.error('[Watch Page Turso Fetch Error]:', err)
   }
 
   const jsonLd = video ? {
@@ -86,7 +106,13 @@ export default async function WatchSlugPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <ShindoraApp initialSlug={slug} initialVideo={video ? JSON.parse(JSON.stringify(video)) : null} />
+      <ShindoraApp 
+        initialSlug={slug} 
+        initialVideo={video ? JSON.parse(JSON.stringify(video)) : null} 
+        initialVideos={initialVideos ? JSON.parse(JSON.stringify(initialVideos)) : []}
+        initialCategories={initialCategories ? JSON.parse(JSON.stringify(initialCategories)) : []}
+        initialSettings={initialSettings ? JSON.parse(JSON.stringify(initialSettings)) : null}
+      />
     </>
   )
 }

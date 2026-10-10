@@ -2153,7 +2153,6 @@ export default function AdminPage() {
                                 setVideoForm({ 
                                   status: 'published', 
                                   scheduledAt: '', 
-                                  duration: '', 
                                   ...video, 
                                   slug: video.slug || '', 
                                   duration: video.duration || '',

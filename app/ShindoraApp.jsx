@@ -419,7 +419,7 @@ export default function App({ initialSlug, initialVideo, initialTVMode = false, 
   };
   // Theme and UI state
   const [theme, setTheme] = useState('light')
-  const [isTVMode, setIsTVMode] = useState(false)
+  const [isTVMode, setIsTVMode] = useState(() => Boolean(initialTVMode))
   const [sidebarOpen, setSidebarOpen] = useState(false) // Collapse initially on desktop!
   const [activeTab, setActiveTab] = useState(() => {
     if (initialSlug || (typeof window !== 'undefined' && window.location.pathname.startsWith('/watch/'))) return 'watch';
@@ -2871,13 +2871,18 @@ const getAnnouncementMessageLabel = () => {
                 <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4">
                   {sortVideosByEpisode(filteredVideos).reduce((acc, video, idx) => {
                     acc.push(
-                      <div
+                      <a
                         key={video.id}
-                        onClick={() => navigateToTab('watch', video)}
-                        className={`group rounded-xl overflow-hidden border cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl ${
+                        href={`/watch/${video.slug || video.id}`}
+                        data-testid="watch-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigateToTab('watch', video);
+                        }}
+                        className={`group rounded-xl overflow-hidden border cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl block no-underline ${
                           theme === 'dark'
-                            ? 'border-[#1e2038] bg-[#0d0e1b] hover:border-cyan-500/40'
-                            : 'border-slate-200 bg-white hover:border-cyan-400'
+                            ? 'border-[#1e2038] bg-[#0d0e1b] hover:border-cyan-500/40 text-slate-100'
+                            : 'border-slate-200 bg-white hover:border-cyan-400 text-slate-900'
                         }`}
                       >
                         <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-800">
@@ -2947,7 +2952,7 @@ const getAnnouncementMessageLabel = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </a>
                     );
 
                     // Insert the inline ad after the 4th item (index 3)

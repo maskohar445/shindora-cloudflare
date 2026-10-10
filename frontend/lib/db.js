@@ -166,7 +166,7 @@ class DatabaseCollection {
   async findOne(query) {
     await this.ensureTable();
     const queryId = query?.id || query?._id;
-    if (queryId && typeof queryId === 'string') {
+    if (queryId && typeof queryId === 'string' && Object.keys(query).length === 1) {
       const res = await this.executeSql({
         sql: `SELECT data FROM [${this.tableName}] WHERE id = ?`,
         args: [queryId]
@@ -455,6 +455,40 @@ class UnifiedDbWrapper {
   }
 }
 
+// Safe dynamic loader for @libsql/client in Node.js runtime without bundler tracing
+function getLibsqlClientModule() {
+  if (typeof process === 'undefined' || !process.versions?.node) {
+    return null;
+  }
+
+  const g = typeof globalThis !== 'undefined' ? globalThis : {};
+  if (typeof g.__non_webpack_require__ === 'function') {
+    try {
+      return g.__non_webpack_require__('@libsql/client');
+    } catch (_) {}
+  }
+
+  try {
+    const { createRequire } = require('module');
+    const searchPaths = [
+      path.resolve(process.cwd(), 'frontend/package.json'),
+      path.resolve(process.cwd(), 'package.json'),
+      '/app/frontend/package.json',
+      '/app/package.json'
+    ];
+    for (const p of searchPaths) {
+      try {
+        const req = createRequire(p);
+        const mod = req('@libsql/client');
+        if (mod && typeof mod.createClient === 'function') {
+          return mod;
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+  return null;
+}
+
 // Retrieve the Unified Database Instance
 export async function getUnifiedDb(customEnv = null) {
   if (globalDbInstance) return globalDbInstance;
@@ -525,12 +559,13 @@ export async function getUnifiedDb(customEnv = null) {
       foundDbPath = candidatePaths[0];
     }
 
-    // Direct require of @libsql/client
-    const { createClient } = require('@libsql/client');
-    const localClient = createClient({ url: `file:${foundDbPath}` });
-    console.log(`[DB Info]: LibSQL Local SQLite Database initialized (${foundDbPath}).`);
-    globalDbInstance = new UnifiedDbWrapper(localClient);
-    return globalDbInstance;
+    const clientMod = getLibsqlClientModule();
+    if (clientMod && typeof clientMod.createClient === 'function') {
+      const localClient = clientMod.createClient({ url: `file:${foundDbPath}` });
+      console.log(`[DB Info]: LibSQL Local SQLite Database initialized (${foundDbPath}).`);
+      globalDbInstance = new UnifiedDbWrapper(localClient);
+      return globalDbInstance;
+    }
   } catch (err) {
     console.warn("[DB Info]: Local LibSQL client not available in this runtime, using edge memory/http fallback:", err.message);
   }
